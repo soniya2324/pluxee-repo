@@ -27,8 +27,7 @@ export default function handler(req, res) {
       '/api/areas',
       '/api/categories',
       '/api/outlets',
-      '/api/geocode',
-      '/api/reverse',
+      '/api/geo',
     ],
   });
 }

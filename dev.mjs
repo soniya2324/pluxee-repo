@@ -1,13 +1,11 @@
 import http from 'http';
 import { URL } from 'url';
 
-import indexHandler from './api/index.js';
 import healthHandler from './api/health.js';
 import mealsHandler from './api/meals.js';
 import mealsRealtimeHandler from './api/meals-realtime.js';
 import mealsByCityHandler from './api/meals-by-city.js';
-import geocodeHandler from './api/geocode.js';
-import reverseHandler from './api/reverse.js';
+import geoHandler from './api/geo.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -33,15 +31,13 @@ function vercelizeRes(res) {
 }
 
 const routes = new Map([
-  ['/api', indexHandler],
-  ['/api/', indexHandler],
-  ['/api/index', indexHandler],
+  ['/api', healthHandler],
+  ['/api/', healthHandler],
   ['/api/health', healthHandler],
   ['/api/meals', mealsHandler],
   ['/api/meals-realtime', mealsRealtimeHandler],
   ['/api/meals-by-city', mealsByCityHandler],
-  ['/api/geocode', geocodeHandler],
-  ['/api/reverse', reverseHandler],
+  ['/api/geo', geoHandler],
 ]);
 
 const server = http.createServer(async (req, res) => {

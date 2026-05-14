@@ -1,7 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "rewrites": [{ "source": "/", "destination": "/api/health" }],
+  "rewrites": [
+    { "source": "/", "destination": "/api/health" },
+    { "source": "/api", "destination": "/api/health" }
+  ],
   "functions": {
     "api/*.js": {
       "memory": 1024,
