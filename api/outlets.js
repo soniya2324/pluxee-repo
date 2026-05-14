@@ -1,6 +1,27 @@
 import { setCorsHeaders } from '../lib/cors.js';
 import { getMealRecords } from '../lib/getMealRecords.js';
-import { applyMealQuery } from '../lib/mealFilters.js';
+import { applyMealQuery, filterMeals } from '../lib/mealFilters.js';
+
+function normKey(s) {
+  return String(s ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+function categoryBreakdownForScope(records) {
+  const byKey = new Map();
+  for (const r of records) {
+    const raw = String(r['NEW CATEGORY'] ?? '').trim();
+    if (!raw) continue;
+    const k = normKey(raw);
+    if (!byKey.has(k)) byKey.set(k, { category: raw, count: 0 });
+    byKey.get(k).count += 1;
+  }
+  return [...byKey.values()].sort(
+    (a, b) => b.count - a.count || a.category.localeCompare(b.category, 'en', { sensitivity: 'base' })
+  );
+}
 
 export default async function handler(req, res) {
   setCorsHeaders(res);
@@ -36,19 +57,26 @@ export default async function handler(req, res) {
 
   try {
     const { records, source } = await getMealRecords();
-    const { data, pagination } = applyMealQuery(records, {
+    const mergedQuery = {
       ...req.query,
       state: rawState.trim(),
       stateMatch: req.query.stateMatch || 'exact',
       city: rawCity.trim(),
       cityMatch: req.query.cityMatch || 'exact',
-    });
+    };
+
+    const { category: _dropCategory, ...scopeQuery } = mergedQuery;
+    const scopeRecords = filterMeals(records, scopeQuery);
+    const categoryBreakdown = categoryBreakdownForScope(scopeRecords);
+
+    const { data, pagination } = applyMealQuery(records, mergedQuery);
 
     return res.status(200).json({
       success: true,
       source,
       data,
       pagination,
+      categoryBreakdown,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
