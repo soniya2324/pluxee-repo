@@ -28,6 +28,7 @@ export default async function handler(req, res) {
       error: 'Query parameters "state" and "city" are required',
       examples: [
         '/api/areas?state=Tamil+Nadu&city=Chennai',
+        '/api/areas?state=Tamil+Nadu&city=Chennai&pincode=600042',
         '/api/areas?state=Maharashtra&city=Mumbai',
       ],
     });
@@ -43,7 +44,11 @@ export default async function handler(req, res) {
     const { records, source } = await getMealRecords();
     const wantS = normKey(rawState);
     const wantC = normKey(rawCity);
+    const pinRaw = typeof req.query.pincode === 'string' ? req.query.pincode.trim() : '';
+    const wantPin = pinRaw ? normKey(pinRaw) : '';
     const set = new Set();
+    /** When `pincode` is set: AREA → count for outlets in that city with that PINCODE (for Loc rn–style alignment). */
+    const pinAreaCounts = new Map();
 
     for (const r of records) {
       const st = String(r['STATE'] ?? '').trim();
@@ -51,11 +56,22 @@ export default async function handler(req, res) {
       if (normKey(st) !== wantS || normKey(ci) !== wantC) continue;
       const a = String(r['AREA'] ?? '').trim();
       if (a) set.add(a);
+      if (wantPin && a) {
+        const p = String(r['PINCODE'] ?? '').trim();
+        if (normKey(p) === wantPin) pinAreaCounts.set(a, (pinAreaCounts.get(a) || 0) + 1);
+      }
     }
 
     const data = [...set].sort((a, b) =>
       a.localeCompare(b, 'en', { sensitivity: 'base' })
     );
+
+    let pinMatchArea = '';
+    if (wantPin && pinAreaCounts.size) {
+      pinMatchArea = [...pinAreaCounts.entries()].sort(
+        (x, y) => y[1] - x[1] || x[0].localeCompare(y[0], 'en', { sensitivity: 'base' })
+      )[0][0];
+    }
 
     return res.status(200).json({
       success: true,
@@ -64,6 +80,8 @@ export default async function handler(req, res) {
       city: rawCity.trim(),
       count: data.length,
       data,
+      pincode: pinRaw || undefined,
+      pinMatchArea: pinMatchArea || undefined,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
