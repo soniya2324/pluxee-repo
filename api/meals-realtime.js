@@ -1,11 +1,10 @@
+import { setCorsHeaders } from '../lib/cors.js';
 import { getMealRecordsRemote } from '../lib/getMealRecords.js';
 import { applyMealQuery } from '../lib/mealFilters.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Content-Type', 'application/json');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
 
   if (req.method === 'OPTIONS') {

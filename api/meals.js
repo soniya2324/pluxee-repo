@@ -1,12 +1,10 @@
-import { parse } from 'csv-parse/sync';
+import { setCorsHeaders } from '../lib/cors.js';
 import { tryGetMealRecordsFromFilesystem } from '../lib/getMealRecords.js';
 import { applyMealQuery } from '../lib/mealFilters.js';
 
 export default function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Content-Type', 'application/json');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
