@@ -50,7 +50,8 @@ const server = http.createServer(async (req, res) => {
     pathname = pathname.slice(0, -1);
   }
 
-  const handler = routes.get(pathname);
+  const handler =
+    pathname === '/' ? healthHandler : routes.get(pathname);
   if (!handler) {
     res.statusCode = 404;
     res.setHeader('Content-Type', 'application/json');
