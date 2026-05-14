@@ -1,6 +1,12 @@
 import { setCorsHeaders } from '../lib/cors.js';
 import { getMealRecords } from '../lib/getMealRecords.js';
-import { applyMealQuery } from '../lib/mealFilters.js';
+
+function normKey(s) {
+  return String(s ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
 
 export default async function handler(req, res) {
   setCorsHeaders(res);
@@ -14,44 +20,52 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const rawState = req.query.state;
   const rawCity = req.query.city;
+  if (typeof rawState !== 'string' || !rawState.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Query parameters "state" and "city" are required',
+      example: '/api/categories?state=Tamil+Nadu&city=Chennai',
+    });
+  }
   if (typeof rawCity !== 'string' || !rawCity.trim()) {
     return res.status(400).json({
       success: false,
       error: 'Query parameter "city" is required',
-      examples: [
-        '/api/meals-by-city?city=New%20Delhi',
-        '/api/meals-by-city?city=Chennai&state=Tamil+Nadu',
-        '/api/meals-by-city?city=Mumbai&limit=20&offset=0',
-        '/api/meals-by-city?city=delhi&cityMatch=contains',
-      ],
     });
   }
 
   try {
     const { records, source } = await getMealRecords();
-    const city = rawCity.trim();
-    const { data, pagination } = applyMealQuery(records, {
-      ...req.query,
-      city,
-    });
+    const wantS = normKey(rawState);
+    const wantC = normKey(rawCity);
+    const set = new Set();
+
+    for (const r of records) {
+      const st = String(r['STATE'] ?? '').trim();
+      const ci = String(r['CITY'] ?? '').trim();
+      if (normKey(st) !== wantS || normKey(ci) !== wantC) continue;
+      const c = String(r['NEW CATEGORY'] ?? '').trim();
+      if (c) set.add(c);
+    }
+
+    const data = [...set].sort((a, b) =>
+      a.localeCompare(b, 'en', { sensitivity: 'base' })
+    );
 
     return res.status(200).json({
       success: true,
-      city,
-      cityMatch: String(req.query.cityMatch || 'exact').toLowerCase(),
-      state: req.query.state ? String(req.query.state).trim() : '',
-      stateMatch: String(req.query.stateMatch || 'exact').toLowerCase(),
       source,
+      count: data.length,
       data,
-      pagination,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to load meals',
+      error: 'Failed to load categories',
       message: error.message,
     });
   }
