@@ -15,6 +15,8 @@ export default function handler(req, res) {
   return res.status(200).json({
     ok: true,
     service: 'pluxee-api',
+    geocoder:
+      'Google when GOOGLE_MAPS_API_KEY (or GOOGLE_GEOCODING_API_KEY) is set on the server; otherwise OpenStreetMap Nominatim.',
     endpoints: [
       '/api',
       '/api/health',
