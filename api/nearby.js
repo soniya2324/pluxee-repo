@@ -109,20 +109,28 @@ export default async function handler(req, res) {
       if (d > radiusKm) continue;
       withDist.push({
         record: r,
-        distanceKm: d,
+        distanceKm: d,           // full float precision kept for sorting
         locateVia: anchor.via,
       });
     }
 
-    withDist.sort((a, b) => a.distanceKm - b.distanceKm || normKey(a.record['OUTLET NAME']).localeCompare(normKey(b.record['OUTLET NAME'])));
+    withDist.sort((a, b) =>
+      a.distanceKm - b.distanceKm ||
+      normKey(a.record['OUTLET NAME']).localeCompare(normKey(b.record['OUTLET NAME']))
+    );
 
     const scopeRecords = withDist.map((x) => x.record);
     const categoryBreakdown = categoryBreakdownForScope(scopeRecords);
     const total = withDist.length;
     const page = withDist.slice(off, off + lim);
-    const data = page.map(({ record, distanceKm }) => ({
+
+    const data = page.map(({ record, distanceKm, locateVia }) => ({
       ...record,
-      distanceKm: Math.round(distanceKm * 100) / 100,
+      // Full 4-decimal precision so frontend can distinguish outlets in the same pincode
+      distanceKm: Math.round(distanceKm * 10000) / 10000,
+      // Integer metres — use this for display: "340 m" instead of "~1 km"
+      distanceM: Math.round(distanceKm * 1000),
+      locateVia,
     }));
 
     return res.status(200).json({
@@ -131,7 +139,7 @@ export default async function handler(req, res) {
       locateBy: 'latlng+pincode-centroid',
       anchor: { lat, lon, radiusKm },
       disclaimer:
-        'distanceKm uses PIN office centroid per PINCODE when LAT/LON columns are absent (approximate).',
+        'distanceKm/distanceM use PIN office centroid per PINCODE when LAT/LON columns are absent (approximate).',
       data,
       pagination: {
         total,
