@@ -29,6 +29,7 @@ export default function handler(req, res) {
       '/api/areas',
       '/api/categories',
       '/api/outlets',
+      '/api/nearby',
       '/api/geo',
     ],
   });
