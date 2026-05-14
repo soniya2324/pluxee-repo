@@ -83,6 +83,21 @@ export default async function handler(req, res) {
       bqr: req.query.bqr,
       search: req.query.search,
     };
+    const st = typeof req.query.state === 'string' ? req.query.state.trim() : '';
+    const ct = typeof req.query.city === 'string' ? req.query.city.trim() : '';
+    if (st) {
+      mealQuery.state = st;
+      mealQuery.stateMatch = req.query.stateMatch || 'exact';
+    }
+    if (ct) {
+      mealQuery.city = ct;
+      mealQuery.cityMatch = req.query.cityMatch || 'exact';
+    }
+    const ar = typeof req.query.area === 'string' ? req.query.area.trim() : '';
+    if (ar) {
+      mealQuery.area = ar;
+      mealQuery.areaMatch = req.query.areaMatch || 'exact';
+    }
 
     const baseFiltered = filterMeals(records, mealQuery);
 
