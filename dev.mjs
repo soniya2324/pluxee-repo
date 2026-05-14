@@ -6,6 +6,8 @@ import healthHandler from './api/health.js';
 import mealsHandler from './api/meals.js';
 import mealsRealtimeHandler from './api/meals-realtime.js';
 import mealsByCityHandler from './api/meals-by-city.js';
+import geocodeHandler from './api/geocode.js';
+import reverseHandler from './api/reverse.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -38,6 +40,8 @@ const routes = new Map([
   ['/api/meals', mealsHandler],
   ['/api/meals-realtime', mealsRealtimeHandler],
   ['/api/meals-by-city', mealsByCityHandler],
+  ['/api/geocode', geocodeHandler],
+  ['/api/reverse', reverseHandler],
 ]);
 
 const server = http.createServer(async (req, res) => {
