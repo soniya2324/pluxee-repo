@@ -22,6 +22,7 @@ export default function handler(req, res) {
       '/api/meals-realtime',
       '/api/meals-by-city',
       '/api/states',
+      '/api/states-cities',
       '/api/cities',
       '/api/areas',
       '/api/categories',

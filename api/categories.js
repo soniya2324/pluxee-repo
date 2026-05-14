@@ -40,17 +40,20 @@ export default async function handler(req, res) {
     const { records, source } = await getMealRecords();
     const wantS = normKey(rawState);
     const wantC = normKey(rawCity);
-    const set = new Set();
+    /** One label per normalized category (avoids duplicate chips when CSV varies spacing/case). */
+    const byNorm = new Map();
 
     for (const r of records) {
       const st = String(r['STATE'] ?? '').trim();
       const ci = String(r['CITY'] ?? '').trim();
       if (normKey(st) !== wantS || normKey(ci) !== wantC) continue;
       const c = String(r['NEW CATEGORY'] ?? '').trim();
-      if (c) set.add(c);
+      if (!c) continue;
+      const nk = normKey(c);
+      if (!byNorm.has(nk)) byNorm.set(nk, c);
     }
 
-    const data = [...set].sort((a, b) =>
+    const data = [...byNorm.values()].sort((a, b) =>
       a.localeCompare(b, 'en', { sensitivity: 'base' })
     );
 
