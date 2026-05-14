@@ -102,6 +102,8 @@ async function handleReverseGeocode(_req, res, lat, lon) {
     u.searchParams.set('format', 'jsonv2');
     u.searchParams.set('lat', String(lat));
     u.searchParams.set('lon', String(lon));
+    /* Street-level context (default zoom is coarse; 18 improves suburb / neighbourhood). */
+    u.searchParams.set('zoom', '18');
 
     const nr = await fetch(u.toString(), {
       headers: {
