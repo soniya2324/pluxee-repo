@@ -46,31 +46,45 @@ export default async function handler(req, res) {
     const wantC = normKey(rawCity);
     const pinRaw = typeof req.query.pincode === 'string' ? req.query.pincode.trim() : '';
     const wantPin = pinRaw ? normKey(pinRaw) : '';
-    const set = new Set();
-    /** When `pincode` is set: AREA → count for outlets in that city with that PINCODE (for Loc rn–style alignment). */
+
+    // normKey(area) → first canonical (raw trimmed) area string seen for that key
+    // This ensures pinMatchArea is always the same string used in `data`,
+    // regardless of case/whitespace variation in the CSV.
+    const canonicalArea = new Map(); // normKey → first raw area seen
+    /** pincode-filtered: normKey(area) → count */
     const pinAreaCounts = new Map();
 
     for (const r of records) {
       const st = String(r['STATE'] ?? '').trim();
       const ci = String(r['CITY'] ?? '').trim();
       if (normKey(st) !== wantS || normKey(ci) !== wantC) continue;
+
       const a = String(r['AREA'] ?? '').trim();
-      if (a) set.add(a);
-      if (wantPin && a) {
+      if (!a) continue;
+
+      const ak = normKey(a);
+      if (!canonicalArea.has(ak)) canonicalArea.set(ak, a); // first occurrence wins
+
+      if (wantPin) {
         const p = String(r['PINCODE'] ?? '').trim();
-        if (normKey(p) === wantPin) pinAreaCounts.set(a, (pinAreaCounts.get(a) || 0) + 1);
+        if (normKey(p) === wantPin) {
+          pinAreaCounts.set(ak, (pinAreaCounts.get(ak) || 0) + 1);
+        }
       }
     }
 
-    const data = [...set].sort((a, b) =>
+    // Build sorted data list from canonical values
+    const data = [...canonicalArea.values()].sort((a, b) =>
       a.localeCompare(b, 'en', { sensitivity: 'base' })
     );
 
+    // pinMatchArea: pick the normKey with highest count, resolve to its canonical string
     let pinMatchArea = '';
     if (wantPin && pinAreaCounts.size) {
-      pinMatchArea = [...pinAreaCounts.entries()].sort(
+      const bestKey = [...pinAreaCounts.entries()].sort(
         (x, y) => y[1] - x[1] || x[0].localeCompare(y[0], 'en', { sensitivity: 'base' })
       )[0][0];
+      pinMatchArea = canonicalArea.get(bestKey) ?? '';
     }
 
     return res.status(200).json({
